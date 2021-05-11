@@ -1,11 +1,6 @@
 const router = require("express").Router();
 const Issue = require("../models/Issue");
 
-// GET 
-router.get("/:projectTitle", (req, res) => {
-    const projectTitle = req.params.projectTitle;
-    const queries = req.query;
-});
 
 
 // POST
@@ -31,6 +26,22 @@ router.post("/:projectTitle", async (req, res) => {
     }
 });
 
+// GET 
+router.get("/:projectTitle", async (req, res) => {
+    const projectTitle = req.params.projectTitle;
+    const queries = req.query;
+    try {
+        const response = await Issue.find({ projectTitle, ...queries });
+        const result = response.reduce((final, issue) => {
+            const { projectTitle: title, ...rest } = issue.toJSON();
+            final = [ ...final, rest ];
+            return final;
+        }, []);
+        res.json(result);
+    } catch (error) {
+        console.log("Error while retrieving issues", error);
+    }
+});
 
 // PUT
 
