@@ -3,6 +3,7 @@ const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 const Issue = require("../models/Issue");
+const { ObjectID } = require("mongodb");
 
 chai.use(chaiHttp);
 
@@ -24,6 +25,8 @@ const requiredOnly = {
 
 suite('Functional Tests', function () {
 
+    let id1, id2, id3;
+
     this.beforeEach(async () => {
         await Issue.deleteMany({});
         const testIssue = new Issue({
@@ -41,9 +44,12 @@ suite('Functional Tests', function () {
             status_text: "test status",
             issue_text: "test issue text 2"
         });
-        await testIssue.save();
-        await testIssue1.save();
-        await testIssue2.save();
+        const r1 = await testIssue.save();
+        const r2 = await testIssue1.save();
+        const r3 = await testIssue2.save();
+        id1 = r1._id;
+        id2 = r2._id;
+        id3 = r3._id;
     })
 
     suite("API POST request tests", () => {
@@ -98,7 +104,7 @@ suite('Functional Tests', function () {
                     assert.equal(toJson.assigned_to, "");
                     assert.equal(toJson.status_text, "");
                     done();
-                }); 
+                });
         });
 
         test("Create an issue with missing required fields: POST request to /api/issues/{project}", (done) => {
@@ -159,27 +165,81 @@ suite('Functional Tests', function () {
 
     });
 
-    suite("API PUT request tests", () => {
+    suite.only("API PUT request tests", () => {
 
-        test("Update one field on an issue: PUT request to /api/issues/{project}", () => {
+        test("Update one field on an issue: PUT request to /api/issues/{project}", async () => {
+            const beforeUpdate = await Issue.findById(id1);
+            const res = await chai.request(server)
+                .put("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ ...everyField, issue_title: "test title updated", _id: id1 });
 
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { result: "successfully updated", _id: id1.toString() });
+            const afterUpdate = await Issue.findById(id1);
+            assert.notEqual(beforeUpdate.toJSON().updated_on, afterUpdate.toJSON().updated_on);
+            assert.equal(afterUpdate.toJSON().issue_title, "test title updated");
         });
 
-        test("Update multiple fields on an issue: PUT request to /api/issues/{project}", () => {
+        test("Update multiple fields on an issue: PUT request to /api/issues/{project}", async () => {
+            const beforeUpdate = await Issue.findById(id1);
+            const res = await chai.request(server)
+                .put("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ ...everyField, issue_title: "test title updated", _id: id1, open: false });
 
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { result: "successfully updated", _id: id1.toString() });
+            const afterUpdate = await Issue.findById(id1);
+            assert.notEqual(beforeUpdate.toJSON().updated_on, afterUpdate.toJSON().updated_on);
+            assert.equal(afterUpdate.toJSON().issue_title, "test title updated");
+            assert.equal(afterUpdate.toJSON().open, false);
         });
 
-        test("Update an issue with missing _id: PUT request to /api/issues/{project}", () => {
-
+        test("Update an issue with missing _id: PUT request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .put("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ ...everyField, issue_title: "test title updated" });
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { error: "missing _id" });
         });
 
-        test("Update an issue with no fields to update: PUT request to /api/issues/{project}", () => {
-
+        test("Update an issue with no fields to update: PUT request to /api/issues/{project}", async () => {
+            const beforeUpdate = await Issue.findById(id1);
+            const res = await chai.request(server)
+                .put("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ _id: id1 });
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { error: "no update field(s) sent", _id: id1.toString() });
+            const afterUpdate = await Issue.findById(id1);
+            assert.deepEqual(beforeUpdate.toJSON(), afterUpdate.toJSON());
         });
 
-        test("Update an issue with an invalid _id: PUT request to /api/issues/{project}", () => {
-
+        test("Update an issue with an invalid _id: PUT request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .put("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ _id: "1", ...everyField });
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { error: "could not update", _id: "1" });
         });
 
     });
+
+    // suite("API DELETE request tests", () => {
+
+    //     test("Delete an issue: DELETE request to /api/issues/{project}", done => {
+
+    //     });
+
+    //     test("Delete an issue with an invalid _id: DELETE request to /api/issues/{project}", done => {
+
+    //     });
+
+    //     test("Delete an issue with missing _id: DELETE request to /api/issues/{project}", done => {
+
+    //     });
+    // })
 });

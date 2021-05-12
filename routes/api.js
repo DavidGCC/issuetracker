@@ -55,7 +55,7 @@ router.put("/:projectTitle", async (req, res) => {
         return;
     }
     try {
-        const updatedIssue = await Issue.findByIdAndUpdate(_id, rest);
+        await Issue.findByIdAndUpdate(_id, rest);
         res.json({ result: "successfully updated", _id });
     } catch (error) {
         console.log("error when updating issue", error);
