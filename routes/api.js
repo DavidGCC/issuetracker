@@ -53,7 +53,7 @@ router.put("/:projectTitle", async (req, res) => {
     const fields = ["issue_title", "issue_text", "created_by", "assigned_to", "open", "status_text"];
     let containsFields = 0;
     fields.forEach(field => {
-        if (rest[field]) {
+        if (rest[field] !== undefined) {
             containsFields = 1;
             return;
         }
@@ -63,7 +63,9 @@ router.put("/:projectTitle", async (req, res) => {
         return;
     }
     try {
-        await Issue.findByIdAndUpdate(_id, rest);
+        for (let prop in rest) if (rest[prop] === undefined) delete rest[prop];
+        const resp = await Issue.findByIdAndUpdate(_id, rest);
+        if (resp === null) throw new Error();
         res.json({ result: "successfully updated", _id });
     } catch (error) {
         console.log("error when updating issue", error);
@@ -81,7 +83,8 @@ router.delete("/:projectTitle", async (req, res) => {
         return;
     }
     try {
-        await Issue.findByIdAndDelete(_id);
+        const resp = await Issue.findByIdAndDelete(_id);
+        if (resp === null) throw new Error();
         res.json({
             result: "successfully deleted",
             _id
