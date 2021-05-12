@@ -30,7 +30,20 @@ suite('Functional Tests', function () {
             projectTitle: "testProject",
             ...everyField
         });
+        const testIssue1 = new Issue({
+            projectTitle: "testProject",
+            ...everyField,
+            status_text: "test status 2"
+        });
+        const testIssue2 = new Issue({
+            projectTitle: "testProject",
+            ...everyField,
+            status_text: "test status",
+            issue_text: "test issue text 2"
+        });
         await testIssue.save();
+        await testIssue1.save();
+        await testIssue2.save();
     })
 
     suite("API POST request tests", () => {
@@ -105,16 +118,43 @@ suite('Functional Tests', function () {
 
     suite("API GET request tests", () => {
 
-        test("View issues on a project: GET request to /api/issues/{project}", () => {
-
+        test("View issues on a project: GET request to /api/issues/{project}", (done) => {
+            chai.request(server)
+                .get("/api/issues/testProject")
+                .end((err, res) => {
+                    assert.equal(res.status, 200);
+                    assert.isArray(JSON.parse(res.text));
+                    ["_id", "issue_text", "issue_title", "created_by", "created_on", "updated_on", "open", "status_text", "assigned_to"]
+                        .forEach(item => {
+                            assert.isDefined(JSON.parse(res.text)[0], item);
+                        });
+                    done();
+                });
         });
 
-        test("View issues on a project with one filter: GET request to /api/issues/{project}", () => {
-
+        test("View issues on a project with one filter: GET request to /api/issues/{project}", (done) => {
+            chai.request(server)
+                .get("/api/issues/testProject?status_text=test%20status%202")
+                .end((err, res) => {
+                    assert.equal(res.status, 200);
+                    const toArr = JSON.parse(res.text);
+                    assert.lengthOf(toArr, 1);
+                    assert.equal(toArr[0].status_text, "test status 2");
+                    done();
+                });
         });
 
-        test("View issues on a project with multiple filters: GET request to /api/issues/{project}", () => {
-
+        test("View issues on a project with multiple filters: GET request to /api/issues/{project}", (done) => {
+            chai.request(server)
+                .get("/api/issues/testProject?status_text=test%20status&issue_text=test%20issue%20text%202")
+                .end((err, res) => {
+                    assert.equal(res.status, 200);
+                    const toArr = JSON.parse(res.text);
+                    assert.lengthOf(toArr, 1);
+                    assert.equal(toArr[0].status_text, "test status");
+                    assert.equal(toArr[0].issue_text, "test issue text 2");
+                    done();
+                });
         });
 
     });
