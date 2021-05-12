@@ -50,6 +50,10 @@ router.put("/:projectTitle", async (req, res) => {
         res.json({ error: "missing _id" });
         return;
     }
+    if (Object.keys(rest).length === 0) {
+        res.json({ error: "no update field(s) sent", _id });
+        return;
+    }
     try {
         const updatedIssue = await Issue.findByIdAndUpdate(_id, rest);
         res.json({ result: "successfully updated", _id });
