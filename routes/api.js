@@ -52,16 +52,33 @@ router.put("/:projectTitle", async (req, res) => {
     }
     try {
         const updatedIssue = await Issue.findByIdAndUpdate(_id, rest);
-        res.json({ result: "successfully updated", "_id": "id" });
+        res.json({ result: "successfully updated", _id });
     } catch (error) {
         console.log("error when updating issue", error);
-        res.json({ error: "could not update", "_id": _id });
+        res.json({ error: "could not update", _id });
     }
 });
 
 
 
 // DELETE
+router.delete("/:projectTitle", async (req, res) => {
+    const { _id } = req.body;
+    if (!_id) {
+        res.json({ error: "missing _id" });
+        return;
+    }
+    try {
+        await Issue.findByIdAndDelete(_id);
+        res.json({
+            result: "successfully deleted",
+            _id
+        })
+    } catch (error) {
+        console.log("error while deleting issue", error);
+        res.json({ error: "could not delete", _id });
+    }
+});
 
 
 
