@@ -3,11 +3,9 @@ const chai = require('chai');
 const assert = chai.assert;
 const server = require('../server');
 const Issue = require("../models/Issue");
-const { ObjectID } = require("mongodb");
 
 chai.use(chaiHttp);
 
-const { mongoUrl } = require("../config");
 
 const everyField = {
     issue_title: "test issue",
@@ -54,113 +52,98 @@ suite('Functional Tests', function () {
 
     suite("API POST request tests", () => {
 
-        test("Create an issue with every field: POST request to /api/issues/{project}", (done) => {
-
-            chai.request(server)
+        test("Create an issue with every field: POST request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
                 .post("/api/issues/testProjcet")
                 .set("Content-Type", "application/json")
-                .send(everyField)
-                .end((err, res) => {
-                    assert.isNull(err);
-                    assert.equal(res.status, 200);
-                    assert.equal(res.type, "application/json");
-                    assert.isDefined(res.text);
-                    const toJson = JSON.parse(res.text);
+                .send(everyField);
 
-                    // Check returned object values
-                    Object.keys(toJson).forEach(key => {
-                        if (!everyField[key]) return;
-                        assert.equal(toJson[key], everyField[key]);
-                    });
+            assert.equal(res.status, 200);
+            assert.equal(res.type, "application/json");
+            assert.isDefined(res.text);
+            const toJson = JSON.parse(res.text);
 
-                    assert.isDefined(toJson.created_on);
-                    assert.isDefined(toJson.updated_on);
-                    assert.notEqual(toJson.assigned_to, "");
-                    assert.notEqual(toJson.status_text, "");
-                    done();
-                });
+            // Check returned object values
+            Object.keys(toJson).forEach(key => {
+                if (!everyField[key]) return;
+                assert.equal(toJson[key], everyField[key]);
+            });
+
+            assert.isDefined(toJson.created_on);
+            assert.isDefined(toJson.updated_on);
+            assert.notEqual(toJson.assigned_to, "");
+            assert.notEqual(toJson.status_text, "");
         });
 
-        test("Create an issue with only required fields: POST request to /api/issues/{project}", (done) => {
-            chai.request(server)
+        test("Create an issue with only required fields: POST request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
                 .post("/api/issues/testProjcet")
                 .set("Content-Type", "application/json")
-                .send(requiredOnly)
-                .end((err, res) => {
-                    assert.isNull(err);
-                    assert.equal(res.status, 200);
-                    assert.equal(res.type, "application/json");
-                    assert.isDefined(res.text);
-                    const toJson = JSON.parse(res.text);
+                .send(requiredOnly);
 
-                    //check returned object values
-                    Object.keys(toJson).forEach(key => {
-                        if (!requiredOnly[key]) return;
-                        assert.equal(toJson[key], requiredOnly[key]);
-                    });
+            assert.equal(res.status, 200);
+            assert.equal(res.type, "application/json");
+            assert.isDefined(res.text);
+            const toJson = JSON.parse(res.text);
 
-                    assert.isDefined(toJson.created_on);
-                    assert.isDefined(toJson.updated_on);
-                    assert.equal(toJson.assigned_to, "");
-                    assert.equal(toJson.status_text, "");
-                    done();
-                });
+            //check returned object values
+            Object.keys(toJson).forEach(key => {
+                if (!requiredOnly[key]) return;
+                assert.equal(toJson[key], requiredOnly[key]);
+            });
+
+            assert.isDefined(toJson.created_on);
+            assert.isDefined(toJson.updated_on);
+            assert.equal(toJson.assigned_to, "");
+            assert.equal(toJson.status_text, "");
         });
 
-        test("Create an issue with missing required fields: POST request to /api/issues/{project}", (done) => {
+        test("Create an issue with missing required fields: POST request to /api/issues/{project}", async () => {
             const { issue_title, ...rest } = everyField;
-            chai.request(server)
+            const res = await chai.request(server)
                 .post("/api/issues/testProject")
                 .set("Content-Type", "application/json")
-                .send(rest)
-                .end((err, res) => {
-                    assert.equal(res.status, 200);
-                    assert.deepEqual(JSON.parse(res.text), { error: "required field(s) missing" });
-                    done();
-                });
+                .send(rest);
+
+            assert.equal(res.status, 200);
+            assert.deepEqual(JSON.parse(res.text), { error: "required field(s) missing" });
         });
 
     });
 
     suite("API GET request tests", () => {
 
-        test("View issues on a project: GET request to /api/issues/{project}", (done) => {
-            chai.request(server)
-                .get("/api/issues/testProject")
-                .end((err, res) => {
-                    assert.equal(res.status, 200);
-                    assert.isArray(JSON.parse(res.text));
-                    ["_id", "issue_text", "issue_title", "created_by", "created_on", "updated_on", "open", "status_text", "assigned_to"]
-                        .forEach(item => {
-                            assert.isDefined(JSON.parse(res.text)[0], item);
-                        });
-                    done();
+        test("View issues on a project: GET request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .get("/api/issues/testProject");
+
+            assert.equal(res.status, 200);
+            assert.isArray(JSON.parse(res.text));
+            ["_id", "issue_text", "issue_title", "created_by", "created_on", "updated_on", "open", "status_text", "assigned_to"]
+                .forEach(item => {
+                    assert.isDefined(JSON.parse(res.text)[0], item);
                 });
         });
 
-        test("View issues on a project with one filter: GET request to /api/issues/{project}", (done) => {
-            chai.request(server)
-                .get("/api/issues/testProject?status_text=test%20status%202")
-                .end((err, res) => {
-                    assert.equal(res.status, 200);
-                    const toArr = JSON.parse(res.text);
-                    assert.lengthOf(toArr, 1);
-                    assert.equal(toArr[0].status_text, "test status 2");
-                    done();
-                });
+        test("View issues on a project with one filter: GET request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .get("/api/issues/testProject?status_text=test%20status%202");
+
+            assert.equal(res.status, 200);
+            const toArr = JSON.parse(res.text);
+            assert.lengthOf(toArr, 1);
+            assert.equal(toArr[0].status_text, "test status 2");
         });
 
-        test("View issues on a project with multiple filters: GET request to /api/issues/{project}", (done) => {
-            chai.request(server)
-                .get("/api/issues/testProject?status_text=test%20status&issue_text=test%20issue%20text%202")
-                .end((err, res) => {
-                    assert.equal(res.status, 200);
-                    const toArr = JSON.parse(res.text);
-                    assert.lengthOf(toArr, 1);
-                    assert.equal(toArr[0].status_text, "test status");
-                    assert.equal(toArr[0].issue_text, "test issue text 2");
-                    done();
-                });
+        test("View issues on a project with multiple filters: GET request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .get("/api/issues/testProject?status_text=test%20status&issue_text=test%20issue%20text%202");
+
+            assert.equal(res.status, 200);
+            const toArr = JSON.parse(res.text);
+            assert.lengthOf(toArr, 1);
+            assert.equal(toArr[0].status_text, "test status");
+            assert.equal(toArr[0].issue_text, "test issue text 2");
         });
 
     });
@@ -228,7 +211,7 @@ suite('Functional Tests', function () {
 
     });
 
-    suite.only("API DELETE request tests", () => {
+    suite("API DELETE request tests", () => {
 
         test("Delete an issue: DELETE request to /api/issues/{project}", async () => {
             const res = await chai.request(server)
