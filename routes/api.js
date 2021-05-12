@@ -63,7 +63,7 @@ router.put("/:projectTitle", async (req, res) => {
         return;
     }
     try {
-        for (let prop in rest) if (rest[prop] === undefined) delete rest[prop];
+        for (let prop in rest) if (rest[prop] === "") delete rest[prop];
         const resp = await Issue.findByIdAndUpdate(_id, rest);
         if (resp === null) throw new Error();
         res.json({ result: "successfully updated", _id });
