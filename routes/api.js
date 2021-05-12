@@ -44,6 +44,20 @@ router.get("/:projectTitle", async (req, res) => {
 });
 
 // PUT
+router.put("/:projectTitle", async (req, res) => {
+    const { _id, ...rest } = req.body;
+    if (!_id) {
+        res.json({ error: "missing _id" });
+        return;
+    }
+    try {
+        const updatedIssue = await Issue.findByIdAndUpdate(_id, rest);
+        res.json({ result: "successfully updated", "_id": "id" });
+    } catch (error) {
+        console.log("error when updating issue", error);
+        res.json({ error: "could not update", "_id": _id });
+    }
+});
 
 
 
