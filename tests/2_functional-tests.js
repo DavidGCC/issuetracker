@@ -165,7 +165,7 @@ suite('Functional Tests', function () {
 
     });
 
-    suite.only("API PUT request tests", () => {
+    suite("API PUT request tests", () => {
 
         test("Update one field on an issue: PUT request to /api/issues/{project}", async () => {
             const beforeUpdate = await Issue.findById(id1);
@@ -228,18 +228,35 @@ suite('Functional Tests', function () {
 
     });
 
-    // suite("API DELETE request tests", () => {
+    suite.only("API DELETE request tests", () => {
 
-    //     test("Delete an issue: DELETE request to /api/issues/{project}", done => {
+        test("Delete an issue: DELETE request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .delete("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ _id: id1.toString() });
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { result: "successfully deleted", _id: id1.toString() });
+            const afterDelete = await Issue.findById(id1);
+            assert.isNull(afterDelete);
+        });
 
-    //     });
+        test("Delete an issue with an invalid _id: DELETE request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .delete("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({ _id: "1" });
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { error: "could not delete", _id: "1" });
+        });
 
-    //     test("Delete an issue with an invalid _id: DELETE request to /api/issues/{project}", done => {
-
-    //     });
-
-    //     test("Delete an issue with missing _id: DELETE request to /api/issues/{project}", done => {
-
-    //     });
-    // })
+        test("Delete an issue with missing _id: DELETE request to /api/issues/{project}", async () => {
+            const res = await chai.request(server)
+                .delete("/api/issues/testProject")
+                .set("Content-Type", "application/json")
+                .send({})
+            assert.equal(res.status, 200);
+            assert.deepEqual(res.body, { error: "missing _id" });
+        });
+    })
 });
