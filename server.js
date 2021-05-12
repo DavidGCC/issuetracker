@@ -26,7 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // MONGODB CONNECTION
 
-mongoose.connect(process.env.DB, { useNewUrlParser: true, useFindAndModify: false, useUnifiedTopology: true, useCreateIndex: true })
+const { mongoUrl } = require("./config");
+
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useFindAndModify: false, useUnifiedTopology: true, useCreateIndex: true })
     .then(() => console.log("Successfuly connected to database."))
     .catch(err => console.log("Error when connecting to db", err));
 
