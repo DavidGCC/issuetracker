@@ -50,7 +50,15 @@ router.put("/:projectTitle", async (req, res) => {
         res.json({ error: "missing _id" });
         return;
     }
-    if (Object.keys(rest).length === 0) {
+    const fields = ["issue_title", "issue_text", "created_by", "assigned_to", "open", "status_text"];
+    let containsFields = 0;
+    fields.forEach(field => {
+        if (rest[field]) {
+            containsFields = 1;
+            return;
+        }
+    });
+    if (containsFields === 0) {
         res.json({ error: "no update field(s) sent", _id });
         return;
     }
